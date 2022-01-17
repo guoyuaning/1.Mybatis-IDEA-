@@ -1,0 +1,110 @@
+配置好maven能力（简写，推荐博客（推荐maven安装博客））
+环境变量，通过cmd命令mvn -version检测
+创建一个文件夹maven-repository（存放位置自定义）（可省略）
+打开maven文件夹下的conf/setting.xml
+配置本地仓库位置，国内仓库（aliyun），jdk信息
+
+IDEA配置修改
+set-maven
+修改maven安装目录，setting目录，本地仓库位置。
+
+新建maven项目选择quickstart
+删除其中两个类（可省略）
+main下新建目录resource并右键标记为测试资源根（用于存放mybatis.xml配置文件）
+
+1.新建的student表
+2.加入maven的mybatis坐标，mysql驱动的坐标
+驱动版本不易最新。
+<!-- mybatis依赖-->
+  <dependency>
+    <groupId>org.mybatis</groupId>
+    <artifactId>mybatis</artifactId>
+    <version>3.5.1</version>
+  </dependency>
+
+  <!-- mysql 驱动-->
+  <dependency>
+    <groupId>mysql</groupId>
+    <artifactId>mysql-connector-java</artifactId>
+    <version>5.1.31</version>
+  </dependency>
+</dependencies>
+3.创建实体类，Student--保存表中的一行数据
+新建表中数据，提供get，set方法，最后加上toString方法（IDEA快捷键 alt + ins）
+4.创建持久层的dao接口，定义操作数据库的方法
+dao中文件可暂不定义
+5.创建一个mybatis使用的配置文件
+叫做sql映射文件：写sql语句的。一般一个表一个sql映射文件。
+这个文件是xml文件。
+这个要最好和dao文件在相同目录下
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bjpowernode.mybatis.dao.StudentDao">
+
+    <select id="selectStudents" resultType="com.bjpowercode.domain.Student">
+        select id,name,age from studentinfo order by id
+    </select>
+
+</mapper>
+其中5行中的namespace改为dao文件位置
+7行id自定义，resultType为类的文件位置
+8行为sql语句，自定义
+
+6.创建mybatis的主配置文件：
+一个项目就是一个主配置文件。
+主配置文件提供了数据库的连接信息和sql映射文件的位置信息
+主配置文件写在resource的文件夹下，命名为mybatis.xml
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+    <environments default="development">
+        <environment id="development">
+            <transactionManager type="JDBC"/>
+            <dataSource type="POOLED">
+                <property name="driver" value="com.mysql.jdbc.Driver"/>
+                <property name="url" value="jdbc:mysql://localhost:3306/gy"/>
+                <!-- <property name="url" value="jdbc:mysql://localhost:3306/gy?useSSL=false&amp;serverTimezone=UTC"/> -->
+                <property name="username" value="root"/>
+                <property name="password" value="123456"/>
+            </dataSource>
+        </environment>
+    </environments>
+    <mappers>
+        <mapper resource="com/bjpowercode/dao/StudentDao.xml"/>
+    </mappers>
+</configuration>
+注意6和7行的default和id值必须相同，否则报错。
+7.创建使用呢mybatis类，
+通难过mybatis访问数据库
+创建一个类对象实现
+/访问mybatis读取student数据
+//1.定义mybatis主配置文件的名称,从累路径的跟开始
+String config ="mybatis.xml";
+
+//2.读取config表示的文件
+InputStream in = Resources.getResourceAsStream(config);
+
+//3.创建SqlsessionFactoryBulider对象
+SqlSessionFactoryBuilder builder = new SqlSessionFactoryBuilder();
+
+//4.创建SqlSessionFactory对象
+SqlSessionFactory factory = builder.build(in);
+
+//5.获取SqlSession对象,从SqlSessionfactory中获取SqlSession
+SqlSession sqlSession = factory.openSession();
+
+//6.指定要执行的sql语句的标识。sql映射文件的namespace + "." + 标签的id值
+String sqlId = "com.bjpowernode.mybatis .dao.StudentDao" + "." + "selectStudents";
+
+//7.执行sql语句，通过sqlId找的语句
+List<Student> studentList = sqlSession.selectList(sqlId);
+
+//8.输出结果
+studentList.forEach( stu -> System.out.println(stu));
+
+//9.关闭sqlSession对象
+sqlSession.close();
